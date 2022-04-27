@@ -1,0 +1,166 @@
+/**
+ * Programming assignment 1
+ *
+ * Removes C comments from a source file and writes result to stdout.
+ * Comments are replaced with a single space.
+ * Handles single and double quote sequences for character and string literals.
+ * Comments and quoted sequences can span multiple lines.
+ *
+ * Error handling:
+ *      Prints starting line for unterminated comments or quote sequences.
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "omit.h"
+
+int
+main(void)
+{
+    int c;                          /* Input character */
+    int linecnt = 1;                /* Tracks number of lines */
+    int startline = 1;              /* Start line for comment/quote */
+
+    enum typestate state = START;   /* Initial state of DFA */
+
+    /**
+     * Process a single char at a time until EOF is reached.
+     */
+    while ((c = getchar()) != EOF) {
+        switch (state) {
+        case START:
+            /**
+             * Start state
+             */
+            state = START_sub(c);
+
+            // Potential code here
+            /**
+             * We are leaving START state -- update startline.
+             */
+            if (state != START)
+                startline = linecnt;
+
+            break;
+
+        case SINGLE_QUOTE:
+            /**
+             * We saw a single quote -- start of a char literal.
+             */
+            state = SINGLE_QUOTE_sub(c);
+
+            break;
+
+        case DOUBLE_QUOTE:
+            /**
+             * We saw a double quote -- start of a string literal.
+             */
+            state = DOUBLE_QUOTE_sub(c);
+
+            break;
+
+        case SINGLE_QUOTE_ESC:
+            /**
+             * We saw an escape character in a char literal.
+             */
+            state = SINGLE_QUOTE_ESC_sub(c);
+
+            break;
+
+        case DOUBLE_QUOTE_ESC:
+            /**
+             * We saw an escape character in a string literal.
+             */
+            state = DOUBLE_QUOTE_ESC_sub(c);
+
+            break;
+
+        case SINGLE_SLASH:
+            /**
+             * We saw a single slash -- not sure if this is a comment yet.
+             */
+            state = SINGLE_SLASH_sub(c);
+
+            // Potentially some code here
+
+            break;
+
+        case DOUBLE_SLASH:
+            /**
+             * We saw a double slash -- this is a C++ style comment.
+             */
+            state = DOUBLE_SLASH_sub(c);
+
+            break;
+
+        case SLASH_STAR:
+            /**
+             * We saw a slash* -- looking for another *.
+             */
+            state = SLASH_STAR_sub(c);
+
+            break;
+
+        case STAR_SLASH:
+            /**
+             * We saw a slash** -- looking for a closing slash.
+             */
+            state = STAR_SLASH_sub(c);
+
+            break;
+
+        default:
+            /**
+             * This code should never be reached unless a state is added and
+             * not properly handled.
+             */
+            fprintf(stderr, "Error: Unhandled DFA state\n");
+            return EXIT_FAILURE;
+
+            /* NOT REACHED */
+            break;
+        }
+        /**
+         * We reached a '\n' -- update linecnt.
+         */
+        if (c == '\n')
+            linecnt++;
+    }
+
+    /**
+     * All done -- check for error states and print error message accordingly.
+     * If we ended in a '/' state, print that '/' since we skipped over it.
+     */
+    switch (state) {
+    case SINGLE_SLASH:
+    printf("/");
+    break;
+
+    case SINGLE_QUOTE:
+    case SINGLE_QUOTE_ESC:
+    fprintf(stderr, "Error: line %d: unterminated quote(')\n", startline);
+    return EXIT_FAILURE;
+    break;
+
+    case DOUBLE_QUOTE:
+    case DOUBLE_QUOTE_ESC:
+    fprintf(stderr, "Error: line %d: unterminated quote(\")\n", startline);
+    return EXIT_FAILURE;
+    break;
+
+    case DOUBLE_SLASH:
+    case SLASH_STAR:
+    case STAR_SLASH:
+    fprintf(stderr, "Error: line %d: unterminated comment\n", startline);
+    return EXIT_FAILURE;
+    break;
+
+    default:
+    break;
+    }
+
+    /**
+     * We didn't end in an error state -- return from program successfully.
+     */
+    return EXIT_SUCCESS;
+}

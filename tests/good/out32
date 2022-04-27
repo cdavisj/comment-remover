@@ -1,0 +1,166 @@
+ 
+
+
+
+
+
+
+
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "omit.h"
+
+int
+main(void)
+{
+    int c;                           
+    int linecnt = 1;                 
+    int startline = 1;               
+
+    enum typestate state = START;    
+
+     
+
+
+    while ((c = getchar()) != EOF) {
+        switch (state) {
+        case START:
+             
+
+
+            state = START_sub(c);
+
+             
+             
+
+
+            if (state != START)
+                startline = linecnt;
+
+            break;
+
+        case SINGLE_QUOTE:
+             
+
+
+            state = SINGLE_QUOTE_sub(c);
+
+            break;
+
+        case DOUBLE_QUOTE:
+             
+
+
+            state = DOUBLE_QUOTE_sub(c);
+
+            break;
+
+        case SINGLE_QUOTE_ESC:
+             
+
+
+            state = SINGLE_QUOTE_ESC_sub(c);
+
+            break;
+
+        case DOUBLE_QUOTE_ESC:
+             
+
+
+            state = DOUBLE_QUOTE_ESC_sub(c);
+
+            break;
+
+        case SINGLE_SLASH:
+             
+
+
+            state = SINGLE_SLASH_sub(c);
+
+             
+
+            break;
+
+        case DOUBLE_SLASH:
+             
+
+
+            state = DOUBLE_SLASH_sub(c);
+
+            break;
+
+        case SLASH_STAR:
+             
+
+
+            state = SLASH_STAR_sub(c);
+
+            break;
+
+        case STAR_SLASH:
+             
+
+
+            state = STAR_SLASH_sub(c);
+
+            break;
+
+        default:
+             
+
+
+
+            fprintf(stderr, "Error: Unhandled DFA state\n");
+            return EXIT_FAILURE;
+
+             
+            break;
+        }
+         
+
+
+        if (c == '\n')
+            linecnt++;
+    }
+
+     
+
+
+
+    switch (state) {
+    case SINGLE_SLASH:
+    printf("/");
+    break;
+
+    case SINGLE_QUOTE:
+    case SINGLE_QUOTE_ESC:
+    fprintf(stderr, "Error: line %d: unterminated quote(')\n", startline);
+    return EXIT_FAILURE;
+    break;
+
+    case DOUBLE_QUOTE:
+    case DOUBLE_QUOTE_ESC:
+    fprintf(stderr, "Error: line %d: unterminated quote(\")\n", startline);
+    return EXIT_FAILURE;
+    break;
+
+    case DOUBLE_SLASH:
+    case SLASH_STAR:
+    case STAR_SLASH:
+    fprintf(stderr, "Error: line %d: unterminated comment\n", startline);
+    return EXIT_FAILURE;
+    break;
+
+    default:
+    break;
+    }
+
+     
+
+
+    return EXIT_SUCCESS;
+}

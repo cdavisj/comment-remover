@@ -1,0 +1,198 @@
+#include <stdio.h>
+#include "omit.h"
+
+ 
+
+
+enum typestate
+START_sub(int c)
+{
+     
+
+
+    switch (c) {
+    case '\'':
+        printf("'");
+        return SINGLE_QUOTE;
+    break;
+
+    case '"': 
+        printf("\"");
+        return DOUBLE_QUOTE;
+    break;
+
+    case '/':
+        return SINGLE_SLASH;
+    break;
+    }
+
+    printf("%c", c);
+    return START;    
+}
+
+ 
+
+
+enum typestate
+SINGLE_QUOTE_sub(int c)
+{
+     
+
+
+    switch (c) {
+    case '\'':
+        printf("'");
+        return START;
+    break;
+
+    case '\\':
+        printf("\\");
+        return SINGLE_QUOTE_ESC;
+    break;
+    }
+
+    printf("%c", c);
+    return SINGLE_QUOTE;
+}
+
+ 
+
+
+enum typestate
+DOUBLE_QUOTE_sub(int c)
+{
+     
+
+
+    switch (c) {
+    case '"':
+        printf("\"");
+        return START;
+    break;
+
+    case '\\':
+        printf("\\");
+        return DOUBLE_QUOTE_ESC;
+    break;
+    }
+
+    printf("%c", c);
+    return DOUBLE_QUOTE;
+}
+
+
+ 
+
+
+
+enum typestate
+SINGLE_QUOTE_ESC_sub(int c)
+{
+    printf("%c", c);
+    return SINGLE_QUOTE;
+}
+
+ 
+
+
+
+enum typestate
+DOUBLE_QUOTE_ESC_sub(int c)
+{
+    printf("%c", c);
+    return DOUBLE_QUOTE;
+}
+
+ 
+
+
+enum typestate
+SINGLE_SLASH_sub(int c)
+{
+     
+
+
+    switch (c) {
+    case '/':
+        printf(" ");     
+        return DOUBLE_SLASH;
+    break;
+
+    case '*':
+        printf(" ");     
+        return SLASH_STAR;
+    break;
+    }
+
+    printf("/");         
+    printf("%c", c);
+    return START;
+}
+
+ 
+
+
+enum typestate
+DOUBLE_SLASH_sub(int c)
+{
+     
+
+
+    switch (c) {
+    case '\n':
+        printf("\n");        
+        return START;
+    break;
+    }
+
+    return DOUBLE_SLASH;     
+}
+
+ 
+
+
+enum typestate
+SLASH_STAR_sub(int c)
+{
+     
+
+
+    switch (c) {
+    case '*':
+        return STAR_SLASH;
+    break;
+
+    case '\n':
+        printf("\n");    
+    break;
+    }
+
+    return SLASH_STAR;
+}
+
+ 
+
+
+enum typestate
+STAR_SLASH_sub(int c)
+{
+     
+
+
+    switch (c) {
+    case '/':
+        return START;
+    break;
+
+    case '*':
+        return STAR_SLASH;
+    break;
+
+    case '\n':
+        printf("\n");
+        return SLASH_STAR;
+    break;
+    }
+
+    return SLASH_STAR;
+}

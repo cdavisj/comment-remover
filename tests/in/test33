@@ -1,0 +1,198 @@
+#include <stdio.h>
+#include "omit.h"
+
+/**
+ * Start state
+ */
+enum typestate
+START_sub(int c)
+{
+    /**
+     * Check for sequence start
+     */
+    switch (c) {
+    case '\'':
+        printf("'");
+        return SINGLE_QUOTE;
+    break;
+
+    case '"': 
+        printf("\"");
+        return DOUBLE_QUOTE;
+    break;
+
+    case '/':
+        return SINGLE_SLASH;
+    break;
+    }
+
+    printf("%c", c);
+    return START;   /* No sequence start, stay in START */
+}
+
+/**
+ * Handle single quotes
+ */
+enum typestate
+SINGLE_QUOTE_sub(int c)
+{
+    /**
+     * Check for state change
+     */
+    switch (c) {
+    case '\'':
+        printf("'");
+        return START;
+    break;
+
+    case '\\':
+        printf("\\");
+        return SINGLE_QUOTE_ESC;
+    break;
+    }
+
+    printf("%c", c);
+    return SINGLE_QUOTE;
+}
+
+/**
+ * Handle double quotes
+ */
+enum typestate
+DOUBLE_QUOTE_sub(int c)
+{
+    /**
+     * Check for state change
+     */
+    switch (c) {
+    case '"':
+        printf("\"");
+        return START;
+    break;
+
+    case '\\':
+        printf("\\");
+        return DOUBLE_QUOTE_ESC;
+    break;
+    }
+
+    printf("%c", c);
+    return DOUBLE_QUOTE;
+}
+
+
+/**
+ * Saw a backslash in a char literal -- ignore the special meaning of the
+ * following char.
+ */
+enum typestate
+SINGLE_QUOTE_ESC_sub(int c)
+{
+    printf("%c", c);
+    return SINGLE_QUOTE;
+}
+
+/**
+ * Saw a backslash in a string literal -- ignore the special meaning of the
+ * following char.
+ */
+enum typestate
+DOUBLE_QUOTE_ESC_sub(int c)
+{
+    printf("%c", c);
+    return DOUBLE_QUOTE;
+}
+
+/**
+ * Saw a single slash so far -- don't know if we have a comment yet.
+ */
+enum typestate
+SINGLE_SLASH_sub(int c)
+{
+    /**
+     * Check for state change
+     */
+    switch (c) {
+    case '/':
+        printf(" ");    /* We have a C++ comment -- print a single space */
+        return DOUBLE_SLASH;
+    break;
+
+    case '*':
+        printf(" ");    /* We have a C comment -- print a single space */
+        return SLASH_STAR;
+    break;
+    }
+
+    printf("/");        /* Didn't have a comment -- print '/' we skipped */
+    printf("%c", c);
+    return START;
+}
+
+/**
+ * Saw two slashes (at least) -- we are in a C++ style comment.
+ */
+enum typestate
+DOUBLE_SLASH_sub(int c)
+{
+    /**
+     * Check for state change
+     */
+    switch (c) {
+    case '\n':
+        printf("\n");       /* Exiting C++ comment -- print new line */
+        return START;
+    break;
+    }
+
+    return DOUBLE_SLASH;    /* Still in C++ comment -- keep state */
+}
+
+/**
+ * Saw a slash* -- looking for another *
+ */
+enum typestate
+SLASH_STAR_sub(int c)
+{
+    /**
+     * Check for state change
+     */
+    switch (c) {
+    case '*':
+        return STAR_SLASH;
+    break;
+
+    case '\n':
+        printf("\n");   /* Have a '\n' -- print '\n' to maintain line count */
+    break;
+    }
+
+    return SLASH_STAR;
+}
+
+/**
+ * Saw a slash** -- looking for closing slash to C-style comment.
+ */
+enum typestate
+STAR_SLASH_sub(int c)
+{
+    /**
+     * Check for state change
+     */
+    switch (c) {
+    case '/':
+        return START;
+    break;
+
+    case '*':
+        return STAR_SLASH;
+    break;
+
+    case '\n':
+        printf("\n");
+        return SLASH_STAR;
+    break;
+    }
+
+    return SLASH_STAR;
+}
